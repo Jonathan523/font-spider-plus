@@ -1,25 +1,25 @@
 #!/usr/bin/env node
-
-const fs = require('fs');
-const fse = require('fs-extra')
-const http = require('http');
-const https = require('https');
-const path = require('path');
-const puppeteer = require('puppeteer');
-const program = require('commander');
-const chalk = require('chalk');
-const glob = require('glob');
-const _ = require('lodash');
-const ora = require('ora');
-const child_process  = require('child_process');
-const fileExists = require('file-exists');
+import fs from 'fs-extra';
+import fse from 'fs-extra';
+import * as http from 'http';
+import * as https from 'https';
+import ora from 'ora';
+import * as path from 'path';
+import * as puppeteer from 'puppeteer';
+import { Command } from 'commander';
+import chalk from 'chalk';
+import * as glob from 'glob';
+import _ from 'lodash';
+import CleanCSS from 'clean-css';
+import * as child_process from 'child_process';
+import * as fspconfig from '../assets/fspconfig.js';
+import * as rd from 'rd'
+import fontSpider from 'font-spider';
+import * as version from '../package.json' assert { type: "json" };
 const exec = child_process.exec;
 const execSync = child_process.execSync;
-const fontSpider = require('font-spider');
-const CleanCSS = require('clean-css');
-const rd = require('rd');
 const dir = path.resolve('./');
-const fspconfig = require('../assets/fspconfig');
+const program = new Command();
 let spinner = null;
 let config = null;
 let cbLength = 0;
@@ -33,8 +33,7 @@ let tempFilePath = dir + '\/fsp\/';
 program
     .name('fsp')
     .usage('<command>')
-    .version(require('../package.json').version)
-    .parse(process.argv);
+    .version(version.version)
 
 program
     .command('init')
@@ -96,7 +95,7 @@ function reduce(array) {
 //初始化文件
 function initFile() {
 
-    fs.writeFile(dir+'/fspconfig.js', fspconfig(), (err) => {
+    fs.writeFile(dir+'/fspconfig.js', fspconfig.config(), (err) => {
         if (err) throw err;
         console.log(chalk.bgGreen.black('fspconfig.js配置文件已生成'))
         console.log('配置' +chalk.green(' fspconfig.js ') + '后，执行' + chalk.green(' fsp run ') +'即可运行主程序')
@@ -109,7 +108,7 @@ function checkFile() {
     r.status = false;
     const c = dir+'/fspconfig.js';
 
-    if(!fileExists.sync(c)){
+    if(!fs.existsSync(c)){
         r.console = '请先执行 "fsp init" 初始化相关依赖';
     }else{
         config = JSON.parse(fs.readFileSync(c,'utf-8'));
@@ -135,7 +134,7 @@ function doM() {
     function hashCode(s){
         return s.split("").reduce(function(a,b){a=((a<<5)-a)+b.charCodeAt(0);return a&a},0);
     }
-    fs.mkdir(tempFilePath,0777,function (err) {
+    fs.mkdir(tempFilePath,'0777',function (err) {
         if (err) throw err;
         e()
     })
@@ -165,7 +164,7 @@ function doM() {
                 });
                 await page.content().then((content)=>{
                     let fileName = hashCode(parseInt(new Date().getUTCMilliseconds()).toString());
-                    c = new CleanCSS().minify(content).styles;
+                    var c = new CleanCSS().minify(content).styles;
                     inlineCss += c;
                     content = content.replace(innerStyleReg,'')
                     fileNameList.push(fileName);
